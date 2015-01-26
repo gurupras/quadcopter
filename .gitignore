@@ -1,0 +1,11 @@
+*.pyc
+*.*~
+*.swp
+
+*.o
+*.a
+*.so
+
+# DO NOT IGNORE
+!.gitignore
+
