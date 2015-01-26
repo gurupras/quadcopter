@@ -1,5 +1,5 @@
 import os, sys, argparse
-
+import time
 
 from i2c import I2cDevice
 from imu import Accelerometer
@@ -79,73 +79,73 @@ class Adxl345(Accelerometer):
 		super(Adxl345, self).__init__(i2c_fd, addr, accel_range)
 	
 	def init(self):
-		self.i2c_write_register(REG_POWER_CTL, BITS_PWR_WAKEUP_8Hz)
-		self.i2c_write_register(REG_DATA_FORMAT, BITS_DATA_FULL_RES | accel_range)
-		self.i2c_write_register(REG_FIFO_CTL, FIFO_STREAM)
-		self.i2c_write_register(REG_BW_RATE, 0x0A)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_WAKEUP_8Hz)
+		self.i2c_write_register(Adxl345.REG_DATA_FORMAT, Adxl345.BITS_DATA_FULL_RES | self.accel_range)
+		self.i2c_write_register(Adxl345.REG_FIFO_CTL, Adxl345.FIFO_STREAM)
+		self.i2c_write_register(Adxl345.REG_BW_RATE, 0x0A)
 
 	def calibrate(self, loop=100, sleep_period=0.01):
-		self.i2c_write_register(REG_OFFSET_X, 0x0)
-		self.i2c_write_register(REG_OFFSET_Y, 0x0)
-		self.i2c_write_register(REG_OFFSET_Z, 0x0)
+		self.set_i2c_device()
+		self.i2c_write_register(Adxl345.REG_OFFSET_X, 0x0)
+		self.i2c_write_register(Adxl345.REG_OFFSET_Y, 0x0)
+		self.i2c_write_register(Adxl345.REG_OFFSET_Z, 0x0)
 
-		self.i2c_write_register(REG_POWER_CTL, BITS_PWR_MEASURE)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 		
-		x_accel, y_accel, z_accel = (0,) * 3
-		x_tmp, y_tmp, z_tmp = (0,) * 3
+		x_accel, y_accel, z_accel = 0, 0, 0
+		x_tmp, y_tmp, z_tmp = 0, 0, 0
 		for i in range(0, loop):
 			x_tmp += self.read_x()
 			y_tmp += self.read_y()
 			z_tmp += self.read_z()
-			time.sleep(sleep_period)
 
 		# TODO: Verify that the following logic is correct for all 'accel_range' values
-		x_accel = -(x_tmp / loop) / accel_range
-		y_accel = -(y_tmp / loop) / accel_range
-		z_accel = -(((z_tmp / loop) - 256) / accel_range)
+		x_accel = -(x_tmp / loop) / self.accel_range
+		y_accel = -(y_tmp / loop) / self.accel_range
+		z_accel = -(((z_tmp / loop) - 256) / self.accel_range)
 
 		# Fix the offsets
-		self.i2c_write_register(REG_OFFSET_X, x_accel)
-		self.i2c_write_register(REG_OFFSET_Y, y_accel)
-		self.i2c_write_register(REG_OFFSET_Z, z_accel)
+		self.i2c_write_register(Adxl345.REG_OFFSET_X, x_accel)
+		self.i2c_write_register(Adxl345.REG_OFFSET_Y, y_accel)
+		self.i2c_write_register(Adxl345.REG_OFFSET_Z, z_accel)
 
 		# Set wakeup speed
-		self.i2c_write_register(REG_POWER_CTL, BITS_PWR_WAKEUP_8Hz)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_WAKEUP_8Hz)
 		
 		# Restore measuring mode
-		self.i2c_write_register(REG_POWER_CTL, BITS_PWR_MEASURE)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 
 	def stop(self):
-		self.i2c_write_register(REG_POWER_CTL, 0x0)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, 0x0)
 	# Common routine to read a particular axis
 	def read_axis(self, axis_h, axis_l):
-		h, l = (0,) * 2
+		h, l = 0, 0
 
-		h = self.i2c_read_register(axis_h)
+		h = self.i2c_read_register(axis_h) << 8
 		l = self.i2c_read_register(axis_l)
-		return ((h << 8) | l)
+		return int(h | l)
 
 	def read_x(self):
-		return self.read_axis(REG_DATA_X_H, REG_DATA_X_L)
+		return self.read_axis(Adxl345.REG_DATA_X_H, Adxl345.REG_DATA_X_L)
 
 	def read_y(self):
-		return self.read_axis(REG_DATA_Y_H, REG_DATA_Y_L)
+		return self.read_axis(Adxl345.REG_DATA_Y_H, Adxl345.REG_DATA_Y_L)
 
 	def read_z(self):
-		return self.read_axis(REG_DATA_Z_H, REG_DATA_Z_L)
+		return self.read_axis(Adxl345.REG_DATA_Z_H, Adxl345.REG_DATA_Z_L)
 
 	def adc_to_g(self, value):
-		mode = self.i2c_read_register(REG_DATA_FORMAT)
+		mode = self.i2c_read_register(Adxl345.REG_DATA_FORMAT)
 
-		scale = BASE_SCALE
+		scale = Adxl345.BASE_SCALE
 
-		if not mode & BITS_DATA_FULL_RES:
+		if not mode & Adxl345.BITS_DATA_FULL_RES:
 			g_range = mode & 0x11
-			if g_range == BITS_DATA_RANGE_16G:
+			if g_range == Adxl345.BITS_DATA_RANGE_16G:
 				scale *= 2
-			if g_range == BITS_DATA_RANGE_8G:
+			if g_range == Adxl345.BITS_DATA_RANGE_8G:
 				scale *= 2
-			if g_range == BITS_DATA_RANGE_4G:
+			if g_range == Adxl345.BITS_DATA_RANGE_4G:
 				scale *= 2
 
 		return value * scale
@@ -183,10 +183,10 @@ class Adxl345(Accelerometer):
 
 		# TODO: Handle kill/term/int gracefully
 		
-#		i2c_fd = open(args.i2c_device, 'rw')
-		i2c_fd = 0
+		i2c_fd = open(args.i2c_device, 'rw')
 
 		adxl345 = Adxl345(i2c_fd)
+		adxl345.init()
 
 		if args.calibrate:
 			adxl345.calibrate()
@@ -195,7 +195,7 @@ class Adxl345(Accelerometer):
 		while idx < args.num_samples:
 				values = adxl345.read_sample()
 				if args.mode == 'g':
-					values = [adc_to_g(val) for val in values]
+					values = [adxl345.adc_to_g(val) for val in values]
 					print 'Values are  :%7.3fg  %7.3fg  %7.3fg' % (values[0], values[1], values[2])
 				else:
 					print 'Values are  :%d  %d  %d' % (values[0], values[1], values[2])
