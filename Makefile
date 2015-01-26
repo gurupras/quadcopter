@@ -1,4 +1,4 @@
-LIB_NAME=smbus
+LIB_NAME=_smbus
 MAKEFLAGS = --no-builtin-rules
 # We don't use any suffix rules
 .SUFFIXES :
@@ -9,10 +9,9 @@ CC =gcc
 LD =ld
 AR =ar
 
-all : smbus.o
-	$(addprefix $(CROSS), $(CC)) $(CFLAGS) -shared -o $(LIB_NAME).so $^ $(LIBS)
-	$(addprefix $(CROSS), $(AR)) rcs $(LIB_NAME).a $^
-	swig -v -python -o $(LIB_NAME).py smbus.i
+all :
+	swig -python smbus.i
+	python setup.py build_ext --inplace
 
 %.o : %.c
 	$(addprefix $(CROSS), $(CC)) $(CC_OPTS) -c $< -o $@ $(LIBS)
