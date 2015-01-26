@@ -6,6 +6,8 @@
 *.a
 *.so
 
+*_wrap.c
+
 # DO NOT IGNORE
 !.gitignore
 
