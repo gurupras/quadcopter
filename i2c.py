@@ -3,6 +3,8 @@ import sys
 
 from fcntl import ioctl
 
+import smbus
+
 class I2cDevice(object):
 	I2C_SLAVE = 0x0703
 
@@ -18,7 +20,7 @@ class I2cDevice(object):
 			sys.exit(-1)
 
 	def i2c_read_register(self, register):
-		return self.i2c_smbus_read_byte_data(register)
+		return smbus.i2c_smbus_read_byte_data(self.i2c_fd, register)
 
 	def i2c_write_register(self, register, value):
-		self.i2c_smbus_write_byte_data(register, value)
+		smbus.i2c_smbus_write_byte_data(self.i2c_fd, register, value)
