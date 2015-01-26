@@ -8,7 +8,7 @@ import smbus
 class I2cDevice(object):
 	I2C_SLAVE = 0x0703
 
-	lock = threading.lock()
+	lock = threading.Lock()
 
 	def __init__(self, i2c_fd, addr):
 		self.i2c_fd = i2c_fd
@@ -23,4 +23,4 @@ class I2cDevice(object):
 		return smbus.i2c_smbus_read_byte_data(self.i2c_fd, register)
 
 	def i2c_write_register(self, register, value):
-		smbus.i2c_smbus_write_byte_data(self.i2c_fd, register, value)
+		return smbus.i2c_smbus_write_byte_data(self.i2c_fd, register, value)
