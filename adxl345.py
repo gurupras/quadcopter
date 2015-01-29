@@ -79,13 +79,13 @@ class Adxl345(Accelerometer):
 		super(Adxl345, self).__init__(i2c_fd, addr, accel_range)
 	
 	def init(self):
+		self.set_i2c_device()
 		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_WAKEUP_8Hz)
 		self.i2c_write_register(Adxl345.REG_DATA_FORMAT, Adxl345.BITS_DATA_FULL_RES | self.accel_range)
 		self.i2c_write_register(Adxl345.REG_FIFO_CTL, Adxl345.FIFO_STREAM)
 		self.i2c_write_register(Adxl345.REG_BW_RATE, 0x0A)
 
-	def calibrate(self, loop=100, sleep_period=0.01):
-		self.set_i2c_device()
+	def calibrate(self, loop=100, sleep_period=I2cDevice.sleep_period):
 		self.i2c_write_register(Adxl345.REG_OFFSET_X, 0x0)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Y, 0x0)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Z, 0x0)
@@ -98,11 +98,12 @@ class Adxl345(Accelerometer):
 			x_tmp += self.read_x()
 			y_tmp += self.read_y()
 			z_tmp += self.read_z()
+			time.sleep(sleep_period)
 
 		# TODO: Verify that the following logic is correct for all 'accel_range' values
-		x_accel = -(x_tmp / loop) / self.accel_range
-		y_accel = -(y_tmp / loop) / self.accel_range
-		z_accel = -(((z_tmp / loop) - 256) / self.accel_range)
+		x_accel = -(x_tmp / loop)
+		y_accel = -(y_tmp / loop)
+		z_accel = -(z_tmp / loop) - 256
 
 		# Fix the offsets
 		self.i2c_write_register(Adxl345.REG_OFFSET_X, x_accel)
@@ -202,8 +203,9 @@ class Adxl345(Accelerometer):
 				if args.num_samples > 0:
 					idx += 1
 
+				time.sleep(I2cDevice.sleep_period)
 				if args.delay:
-					time.sleep(delay)
+					time.sleep(args.delay)
 
 		adxl345.stop()
 

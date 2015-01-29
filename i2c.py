@@ -8,6 +8,7 @@ import smbus
 class I2cDevice(object):
         I2C_SLAVE = 0x0703
 	lock = threading.Lock()
+	sleep_period = 0.01
 
 	def __init__(self, i2c_fd, addr):
 		self.i2c_fd = i2c_fd.fileno()
