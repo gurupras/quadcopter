@@ -20,7 +20,14 @@ class I2cDevice(object):
 			sys.exit(-1)
 
 	def i2c_read_register(self, register):
-		return smbus.smbus_read_byte(self.i2c_fd, register)
+		return smbus.smbus_read_byte_data(self.i2c_fd, register)
 
 	def i2c_write_register(self, register, value):
-		return smbus.smbus_write_byte(self.i2c_fd, register, value)
+		return smbus.smbus_write_byte_data(self.i2c_fd, register, value)
+
+	def i2c_read(self):
+		return smbus.smbus_read_byte(self.i2c_fd)
+
+	def i2c_write(self, value):
+		return smbus.smbus_write_byte(self.i2c_fd, value)
+
