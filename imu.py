@@ -2,11 +2,11 @@ from i2c import I2cDevice
 
 from abc import abstractmethod
 
-class Imu(I2cDevice):
+class IMU(I2cDevice):
 	event_listener_list = []
 
 	def __init__(self, i2c_fd, addr):
-		super(Imu, self).__init__(i2c_fd, addr)
+		super(IMU, self).__init__(i2c_fd, addr)
 
 	def register_event_listener(self, func):
 		self.event_listener_list.append(func)
@@ -32,7 +32,7 @@ class IMU_9DOF:
 		self.gyroscope     = gyroscope
 		self.magnetometer  = magnetometer
 	
-class Accelerometer(Imu):
+class Accelerometer(IMU):
 	def __init__(self, i2c_fd, addr, accel_range):
 		super(Accelerometer, self).__init__(i2c_fd, addr)
 		self.accel_range = accel_range
@@ -54,7 +54,7 @@ class Accelerometer(Imu):
 		raise Exception('Unimplemented')
 
 
-class Gyroscope(Imu):
+class Gyroscope(IMU):
 
 	def __init__(self, i2c_fd):
 		super(Gyroscope, self).__init__(i2c_fd)
