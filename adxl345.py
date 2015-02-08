@@ -1,5 +1,6 @@
 import os, sys, argparse
 import time
+import numpy
 
 from i2c import I2cDevice
 from imu import Accelerometer
@@ -38,6 +39,15 @@ class Adxl345(Accelerometer):
 	REG_FIFO_CTL                     = 0x38        #FIFO control
 	REG_FIFO_STATUS                  = 0x39        #FIFO status
 
+	ADXL345_RESOLUTION               = 0.004       #mg/lsb
+
+	# Output Data Rates(Hz)
+	BITS_RATE_3200HZ    = 0x0F
+	BITS_RATE_1600HZ    = 0x0E
+	BITS_RATE_800HZ     = 0x0D
+	BITS_RATE_400HZ     = 0x0C
+	BITS_RATE_200HZ     = 0x0B
+	BITS_RATE_100HZ     = 0x0A
 
 	# Power management bits
 	BITS_PWR_LINK       = 1<<5
@@ -80,51 +90,55 @@ class Adxl345(Accelerometer):
 	
 	def init(self):
 		self.set_i2c_device()
-		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_WAKEUP_8Hz)
 		self.i2c_write_register(Adxl345.REG_DATA_FORMAT, Adxl345.BITS_DATA_FULL_RES | self.accel_range)
 		self.i2c_write_register(Adxl345.REG_FIFO_CTL, Adxl345.FIFO_STREAM)
-		self.i2c_write_register(Adxl345.REG_BW_RATE, 0x0A)
+		self.i2c_write_register(Adxl345.REG_BW_RATE, Adxl345.BITS_RATE_400HZ)
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 
 	def calibrate(self, loop=100, sleep_period=I2cDevice.sleep_period):
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, 0x0)
 		self.i2c_write_register(Adxl345.REG_OFFSET_X, 0x0)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Y, 0x0)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Z, 0x0)
-
-		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 		
+		self.init()
+
 		x_accel, y_accel, z_accel = 0, 0, 0
 		x_tmp, y_tmp, z_tmp = 0, 0, 0
 		for i in range(0, loop):
-			x_tmp += self.read_x()
-			y_tmp += self.read_y()
-			z_tmp += self.read_z()
+			x = self.read_x()
+			y = self.read_y()
+			z = self.read_z()
+			print '%d  %d  %d' % (x, y, z)
+			x_tmp += x
+			y_tmp += y
+			z_tmp += z
 			time.sleep(sleep_period)
 
 		# TODO: Verify that the following logic is correct for all 'accel_range' values
-		x_accel = -(x_tmp / loop)
-		y_accel = -(y_tmp / loop)
-		z_accel = -(z_tmp / loop) - 256
+		x_accel = numpy.uint16((x_accel - (x_tmp / loop)) / 4)
+		y_accel = numpy.uint16((y_accel - (y_tmp / loop)) / 4)
+		z_accel = numpy.uint16((z_accel - (z_tmp / loop)) / 4)
 
 		# Fix the offsets
+		self.i2c_write_register(Adxl345.REG_POWER_CTL, 0x00)
 		self.i2c_write_register(Adxl345.REG_OFFSET_X, x_accel)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Y, y_accel)
 		self.i2c_write_register(Adxl345.REG_OFFSET_Z, z_accel)
 
-		# Set wakeup speed
-		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_WAKEUP_8Hz)
-		
 		# Restore measuring mode
 		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 
 	def stop(self):
 		self.i2c_write_register(Adxl345.REG_POWER_CTL, 0x0)
+
 	# Common routine to read a particular axis
 	def read_axis(self, axis_h, axis_l):
 		h, l = 0, 0
 
-		h = self.i2c_read_register(axis_h) << 8
+		h = self.i2c_read_register(axis_h)
 		l = self.i2c_read_register(axis_l)
-		return int(h | l)
+		return numpy.uint16((h << 8) | l)
 
 	def read_x(self):
 		return self.read_axis(Adxl345.REG_DATA_X_H, Adxl345.REG_DATA_X_L)
@@ -136,21 +150,9 @@ class Adxl345(Accelerometer):
 		return self.read_axis(Adxl345.REG_DATA_Z_H, Adxl345.REG_DATA_Z_L)
 
 	def adc_to_g(self, value):
-		mode = self.i2c_read_register(Adxl345.REG_DATA_FORMAT)
-
-		scale = Adxl345.BASE_SCALE
-
-		if not mode & Adxl345.BITS_DATA_FULL_RES:
-			g_range = mode & 0x11
-			if g_range == Adxl345.BITS_DATA_RANGE_16G:
-				scale *= 2
-			if g_range == Adxl345.BITS_DATA_RANGE_8G:
-				scale *= 2
-			if g_range == Adxl345.BITS_DATA_RANGE_4G:
-				scale *= 2
-
-		return value * scale
-
+		if value & 0x80:
+			value = -1 * (value & 0x7F)
+		return value * (Adxl345.BASE_SCALE * self.accel_range)
 	
 	def read_sample(self):
 		# Ensure we're the current I2C device
@@ -170,7 +172,7 @@ class Adxl345(Accelerometer):
 
 		parser.add_argument('-i', '--i2c-device', action="store", type=str, default='/dev/i2c-1', help="I2C Device to use")
 		parser.add_argument('-c', '--calibrate', action="store_true", default=False, help="Enables manual offset calibration")
-		parser.add_argument('-m', '--mode', action="store", type=str, default='g', choices=['raw', 'g'], help="Mode of operation")
+		parser.add_argument('-m', '--mode', action="store", type=str, default='g', choices=['raw', 'g', 'all'], help="Mode of operation")
 		parser.add_argument('-n', '--num-samples', action="store", type=int, default=0, help="Specifies a limit on number of samples - Default is infinity")
 		parser.add_argument('-d', '--delay', action="store", type=float, default=None, help="Specifies an additional delay in seconds")
 		parser.add_argument('-v', '--verbose', action="store_true", default=False, help="Enable verbose logging")
@@ -198,6 +200,9 @@ class Adxl345(Accelerometer):
 				if args.mode == 'g':
 					values = [adxl345.adc_to_g(val) for val in values]
 					print 'Values are  :%7.3fg  %7.3fg  %7.3fg' % (values[0], values[1], values[2])
+				elif args.mode == 'all':
+					g_values = [adxl345.adc_to_g(val) for val in values]
+					print 'Values are  :%d(%7.3fg)  %d(%7.3fg)  %d(%7.3fg)' % (values[0], g_values[0], values[1], g_values[1], values[2], g_values[2])
 				else:
 					print 'Values are  :%d  %d  %d' % (values[0], values[1], values[2])
 				if args.num_samples > 0:
