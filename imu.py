@@ -33,6 +33,7 @@ class IMU_9DOF:
 		self.magnetometer  = magnetometer
 	
 class Accelerometer(IMU):
+	EARTH_GRAVITATIONAL_FORCE = 9.80665
 	def __init__(self, i2c_fd, addr, accel_range):
 		super(Accelerometer, self).__init__(i2c_fd, addr)
 		self.accel_range = accel_range
@@ -56,8 +57,8 @@ class Accelerometer(IMU):
 
 class Gyroscope(IMU):
 
-	def __init__(self, i2c_fd):
-		super(Gyroscope, self).__init__(i2c_fd)
+	def __init__(self, i2c_fd, addr):
+		super(Gyroscope, self).__init__(i2c_fd, addr)
 
 	@abstractmethod
 	def read_x(self):
