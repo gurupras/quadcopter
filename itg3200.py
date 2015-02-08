@@ -1,7 +1,15 @@
+import sys,os,time
+import argparse
+import numpy
+
+from i2c import I2cDevice
+from imu import Gyroscope
+
+
 # TODO: Add temperature offsetting
 class Itg3200(Gyroscope):
-	ITG3200_ADDR			0x68	# 7-bit address
-	ITG3200_SENSITIVITY		14.375
+	ITG3200_ADDR	    = 0x68	# 7-bit address
+	ITG3200_SENSITIVITY = 14.375
 
 	# Registers
 	REG_WHO_AM_I     = 0x00
@@ -20,37 +28,42 @@ class Itg3200(Gyroscope):
 	REG_PWRMGM       = 0x3E
 
 	# LPF Bandwidths
-	DLPF_FS_SEL (3 << 3)
-	LPFBW_256HZ 0x00
-	LPFBW_188HZ 0x01
-	LPFBW_98HZ  0x02
-	LPFBW_42HZ  0x03
-	LPFBW_20HZ  0x04
-	LPFBW_10HZ  0x05
-	LPFBW_5HZ   0x06
+	DLPF_FS_SEL      = (3 << 3)
+	LPFBW_256HZ      = 0x00
+	LPFBW_188HZ      = 0x01
+	LPFBW_98HZ       = 0x02
+	LPFBW_42HZ       = 0x03
+	LPFBW_20HZ       = 0x04
+	LPFBW_10HZ       = 0x05
+	LPFBW_5HZ        = 0x06
 
 	
-	def __init__(self, i2c_fd):
-		super(Itg3200, self).__init__(i2c_fd)
+	def __init__(self, i2c_fd, addr=ITG3200_ADDR):
+		super(Itg3200, self).__init__(i2c_fd, addr)
+		self.x_offset = 0x0
+		self.y_offset = 0x0
+		self.z_offset = 0x0
 
 	def init(self):
+		self.set_i2c_device()
 		self.i2c_write_register(Itg3200.REG_PWRMGM, 0x0)
 		self.i2c_write_register(Itg3200.REG_SMPLRT_DIV, 0x09)
 		self.i2c_write_register(Itg3200.REG_DLPF_FS, Itg3200.DLPF_FS_SEL | Itg3200.LPFBW_188HZ)
 		self.i2c_write_register(Itg3200.REG_INT_CFG, 0x0)
 
 	def calibrate(self, loop=100, sleep_period=0.01):
+		self.init()
 		x_tmp, y_tmp, z_tmp = (0,) * 3
 
 		for i in range(loop):
-			x_tmp += read_x()
-			y_tmp += read_y()
-			z_tmp += read_z()
+			x_tmp += self.read_x()
+			y_tmp += self.read_y()
+			z_tmp += self.read_z()
 			time.sleep(sleep_period)
 
-		self.x_offset = x_tmp / loop
-		self.y_offset = y_tmp / loop
-		self.z_offset = z_tmp / loop
+		self.x_offset = numpy.uint16(x_tmp / loop)
+		self.y_offset = numpy.uint16(y_tmp / loop)
+		self.z_offset = numpy.uint16(z_tmp / loop)
 
 	def stop(self):
 		self.i2c_write_register(Itg3200.REG_PWRMGM, 0x20)
@@ -66,7 +79,7 @@ class Itg3200(Gyroscope):
 		h, l = (0, 0)
 		h = self.i2c_read_register(axis_h)
 		l = self.i2c_read_register(axis_l)
-		return ((h << 8) | l) - offset
+		return numpy.uint16(((h << 8) | l) - offset)
 
 	def read_temp(self):
 		return self.gyro_read_axis(Itg3200.REG_TEMP_OUT_H, Itg3200.REG_TEMP_OUT_L, self.temp_offset)
@@ -126,7 +139,7 @@ class Itg3200(Gyroscope):
 		while idx < args.num_samples:
 				values = itg3200.read_sample()
 				if args.mode == 'g':
-					values = [adc_to_deg(val) for val in values]
+					values = [itg3200.adc_to_angle(val) for val in values]
 					print 'Values are  :%ddeg  %ddeg  %ddeg' % (values[0], values[1], values[2])
 				else:
 					print 'Values are  :%d  %d  %d' % (values[0], values[1], values[2])
