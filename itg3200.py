@@ -51,7 +51,7 @@ class Itg3200(Gyroscope):
 		self.i2c_write_register(Itg3200.REG_DLPF_FS, Itg3200.DLPF_FS_SEL | Itg3200.LPFBW_188HZ)
 		self.i2c_write_register(Itg3200.REG_INT_CFG, 0x0)
 
-	def calibrate(self, loop=100, sleep_period=0.01):
+	def calibrate(self, loop=100, sleep_period=I2cDevice.sleep_period):
 		self.init()
 		x_tmp, y_tmp, z_tmp = (0,) * 3
 
@@ -146,6 +146,7 @@ class Itg3200(Gyroscope):
 				if args.num_samples > 0:
 					idx += 1
 
+				time.sleep(itg3200.sleep_period)
 				if args.delay:
 					time.sleep(delay)
 

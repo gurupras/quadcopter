@@ -208,7 +208,7 @@ class Adxl345(Accelerometer):
 				if args.num_samples > 0:
 					idx += 1
 
-				time.sleep(I2cDevice.sleep_period)
+				time.sleep(adxl345.sleep_period)
 				if args.delay:
 					time.sleep(args.delay)
 
