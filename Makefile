@@ -11,13 +11,13 @@ AR =ar
 
 all :
 	swig -python smbus.i
-	CFLAGS="-O3 -Werror" python setup.py build_ext --inplace
+	CFLAGS="-O3 -Wall -Werror" python setup.py build_ext --inplace
 
 %.o : %.c
 	$(addprefix $(CROSS), $(CC)) $(CC_OPTS) -c $< -o $@ $(LIBS)
 
 clean :
-	@rm -rf *.o **/*.o $(LIB_NAME).so $(LIB_NAME).a $(LIB_NAME) $(LIB_NAME).py $(LIB_NAME)_wrap.c build *.pyc
+	@rm -rf *.o **/*.o $(LIB_NAME).so $(LIB_NAME).a $(LIB_NAME) $(LIB_NAME).py $(LIB_NAME)_wrap.c build *.pyc _$(LIB_NAME).so
 
 .PHONY : clean all
 
