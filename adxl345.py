@@ -109,7 +109,7 @@ class Adxl345(Accelerometer):
 			x = self.read_x()
 			y = self.read_y()
 			z = self.read_z()
-			print '%d  %d  %d' % (x, y, z)
+#			print '%d  %d  %d' % (x, y, z)
 			x_tmp += x
 			y_tmp += y
 			z_tmp += z
@@ -138,7 +138,11 @@ class Adxl345(Accelerometer):
 
 		h = self.i2c_read_register(axis_h)
 		l = self.i2c_read_register(axis_l)
-		return numpy.uint16((h << 8) | l)
+		value = (h << 8) | l
+		if value & (1 << 16 - 1):
+			value = value - (1<<16)
+
+		return float(value)
 
 	def read_x(self):
 		return self.read_axis(Adxl345.REG_DATA_X_H, Adxl345.REG_DATA_X_L)
@@ -150,8 +154,6 @@ class Adxl345(Accelerometer):
 		return self.read_axis(Adxl345.REG_DATA_Z_H, Adxl345.REG_DATA_Z_L)
 
 	def adc_to_g(self, value):
-		if value & 0x80:
-			value = -1 * (value & 0x7F)
 		return value * (Adxl345.BASE_SCALE * self.accel_range)
 	
 	def read_sample(self):
