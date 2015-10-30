@@ -1,6 +1,7 @@
 import os, sys, argparse
 import time
 import numpy
+import math
 
 from i2c import I2cDevice
 from imu import Accelerometer
@@ -92,7 +93,7 @@ class Adxl345(Accelerometer):
 		self.set_i2c_device()
 		self.i2c_write_register(Adxl345.REG_DATA_FORMAT, Adxl345.BITS_DATA_FULL_RES | self.accel_range)
 		self.i2c_write_register(Adxl345.REG_FIFO_CTL, Adxl345.FIFO_STREAM)
-		self.i2c_write_register(Adxl345.REG_BW_RATE, Adxl345.BITS_RATE_400HZ)
+		self.i2c_write_register(Adxl345.REG_BW_RATE, Adxl345.BITS_RATE_100HZ)
 		self.i2c_write_register(Adxl345.REG_POWER_CTL, Adxl345.BITS_PWR_MEASURE)
 
 	def calibrate(self, loop=100, sleep_period=I2cDevice.sleep_period):
@@ -156,7 +157,7 @@ class Adxl345(Accelerometer):
 	def adc_to_g(self, value):
 		return value * (Adxl345.BASE_SCALE * self.accel_range)
 	
-	def read_sample(self):
+	def get(self):
 		# Ensure we're the current I2C device
 		with I2cDevice.lock:
 			self.set_i2c_device()
@@ -167,6 +168,29 @@ class Adxl345(Accelerometer):
 			
 			return x, y, z
 
+	def get_g(self):
+		values = self.get()
+		return [self.adc_to_g(x) for x in values]
+
+	def g_to_degrees(self, g_values):
+
+		x, y, z = g_values
+
+
+
+		x_deg = math.atan2(x / (math.sqrt(pow(y, 2) + pow(z, 2))))
+		y_deg = math.atan2(y / (math.sqrt(pow(x, 2) + pow(z, 2))))
+		z_deg = math.atan2(math.sqrt(pow(x, 2) + pow(y, 2)) / z)
+
+		x_deg = (x_deg * 180.00) / 3.141592
+		y_deg = (y_deg * 180.00) / 3.141592
+		z_deg = (z_deg * 180.00) / 3.141592
+
+		return [x_deg, y_deg, z_deg]
+
+	def get_degrees(self):
+		g_values = self.get_g()
+		return self.g_to_degrees(g_values)
 
 	@staticmethod
 	def setup_parser():
@@ -198,13 +222,23 @@ class Adxl345(Accelerometer):
 	
 		idx = -1
 		while idx < args.num_samples:
-				values = adxl345.read_sample()
+				values = adxl345.get()
 				if args.mode == 'g':
 					values = [adxl345.adc_to_g(val) for val in values]
 					print 'Values are  :%7.3fg  %7.3fg  %7.3fg' % (values[0], values[1], values[2])
 				elif args.mode == 'all':
 					g_values = [adxl345.adc_to_g(val) for val in values]
-					print 'Values are  :%d(%7.3fg)  %d(%7.3fg)  %d(%7.3fg)' % (values[0], g_values[0], values[1], g_values[1], values[2], g_values[2])
+					deg_values = adxl345.g_to_degrees(g_values)
+					print 'Values are  :%d(%7.3fg  %d)  %d(%7.3fg  %d)  %d(%7.3fg  %d)' % (
+						values[0],
+						g_values[0],
+						deg_values[0],
+						values[1],
+						g_values[1],
+						deg_values[1],
+						values[2],
+						g_values[2],
+						deg_values[2])
 				else:
 					print 'Values are  :%d  %d  %d' % (values[0], values[1], values[2])
 				if args.num_samples > 0:
