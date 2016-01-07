@@ -81,31 +81,30 @@ def command_parser():
 	return command_parser
 
 
-def ESC_worker(args):
-	addr = motor_id_to_addr(args.motor_id)
+def ESC_worker(i2c_device, motor_id, delay=100):
+	addr = motor_id_to_addr(motor_id)
 	print 'Starting ESC with ID: 0x%X' % (addr)
-	i2c_fd = open(args.i2c_device, 'rw')
-	esc = AfroESC(i2c_fd, delay=args.delay, addr=addr)
-	global esc_list
-	esc_list = []
-	esc_list.append(esc)
+	i2c_fd = open(i2c_device, 'rw')
+	esc = AfroESC(i2c_fd, delay=delay, addr=addr)
+	esc_dict[addr] = esc
 	esc.run()
 
 def cmd_start(args):
-	addr = int(str(args.motor_id), 16)
+	addr = int(str(args.motor_id), 0)
+	print 'start motor: %d' % (addr)
+	addr = motor_id_to_addr(addr)
 	try:
-		idx = addr - AfroESC.MOTOR_BASE
-		assert idx < 4
-		esc = esc_list[idx]
+		esc = esc_dict[addr]
 		assert esc
 	except Exception, e:
-		print repr(e)
-		return -1
-	esc.init()
+		pass
+		worker = threading.Thread(target=ESC_worker, args=(I2C_DEVICE, addr,))
+		worker.daemon = True
+		worker.start()
 	return 0
 
 def cmd_exit(args):
-	for esc in esc_list:
+	for esc in esc_dict.values():
 		esc.slow_stop()
 	sys.exit(0)
 
@@ -116,7 +115,7 @@ def cmd_speed(args):
 		idx = addr - AfroESC.MOTOR_BASE
 		assert idx < 4
 		esc = None
-		for e in esc_list:
+		for e in esc_dict:
 			if e.addr == addr:
 				esc = e
 		assert esc
@@ -133,7 +132,7 @@ def cmd_delay(args):
 	try:
 		idx = addr - AfroESC.MOTOR_BASE
 		assert idx < 4
-		for e in esc_list:
+		for e in esc_dict:
 			if e.addr == addr:
 				esc = e
 		assert esc
@@ -164,9 +163,11 @@ def main(argv):
 	parser = setup_parser()
 	args = parser.parse_args(argv[1:])
 
-	worker = threading.Thread(target=ESC_worker, args=(args,))
-	worker.daemon = True
-	worker.start()
+	global I2C_DEVICE
+	I2C_DEVICE = args.i2c_device
+
+	global esc_dict
+	esc_dict = {}
 
 	shell_worker = threading.Thread(target=shell_thread)
 	shell_worker.daemon = True
