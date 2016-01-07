@@ -22,7 +22,7 @@ class AfroESC(ESC):
 			self.i2c_write(0x0)
 			time.sleep(10 / 1e6)
 		self.speed = 0x1
-	
+
 	def run(self):
 		self.init()
 		prev_speed = 0
@@ -33,7 +33,7 @@ class AfroESC(ESC):
 				prev_speed = self.speed
 			self.i2c_write(self.speed)
 			time.sleep(100 / 1e6)
-		
+
 	def slow_stop(self):
 		while self.speed != 0:
 			self.speed = 0 if self.speed < 5 else self.speed - 5
@@ -41,7 +41,7 @@ class AfroESC(ESC):
 
 def motor_id_to_addr(motor_id):
 	addr = int(str(motor_id), 0)
-	if addr <= 4:
+	if addr < 4:
 		# Convert to address
 		return AfroESC.MOTOR_BASE + addr
 	else:
@@ -54,7 +54,7 @@ def setup_parser():
 	parser.add_argument('-i', '--i2c-device', action="store", type=str, default='/dev/i2c-1', help="I2C Device to use")
 	parser.add_argument('-d', '--delay', action="store", type=float, default=10, help="Specifies an additional delay in ms")
 	parser.add_argument('-v', '--verbose', action="store_true", default=False, help="Enable verbose logging")
-	
+
 	return parser
 
 def command_parser():
@@ -115,6 +115,7 @@ def cmd_speed(args):
 	try:
 		idx = addr - AfroESC.MOTOR_BASE
 		assert idx < 4
+		esc = None
 		for e in esc_list:
 			if e.addr == addr:
 				esc = e
@@ -123,7 +124,7 @@ def cmd_speed(args):
 	except Exception, e:
 		print repr(e)
 		return -1
-	
+
 	esc.speed = speed
 
 def cmd_delay(args):
@@ -140,7 +141,7 @@ def cmd_delay(args):
 	except Exception, e:
 		print repr(e)
 		return -1
-	
+
 	esc.delay = delay
 
 
@@ -162,7 +163,7 @@ def shell_thread():
 def main(argv):
 	parser = setup_parser()
 	args = parser.parse_args(argv[1:])
-	
+
 	worker = threading.Thread(target=ESC_worker, args=(args,))
 	worker.daemon = True
 	worker.start()
@@ -174,6 +175,6 @@ def main(argv):
 	while True:
 		time.sleep(0.3)
 
-	
+
 if __name__ == '__main__':
 	main(sys.argv)
