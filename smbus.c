@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <linux/i2c-dev.h>
+#include "i2c-dev.h"
 #include <sys/types.h>
 #include <inttypes.h>
 
