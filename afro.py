@@ -147,14 +147,17 @@ def cmd_delay(args):
 def shell_thread():
 	cmd_parser = command_parser()
 	while 1:
-		string = raw_input('$ ')
-		string = string.strip()
-		if not string:
-			continue
-		tokens = string.split(' ')
-		args = cmd_parser.parse_args(tokens)
-		if args:
-			args.func(args)
+		try:
+			string = raw_input('$ ')
+			string = string.strip()
+			if not string:
+				continue
+			tokens = string.split(' ')
+			args = cmd_parser.parse_args(tokens)
+			if args:
+				args.func(args)
+		except KeyboardInterrupt:
+			return
 
 def main(argv):
 	parser = setup_parser()
@@ -165,9 +168,12 @@ def main(argv):
 	worker.start()
 
 	shell_worker = threading.Thread(target=shell_thread)
+	shell_worker.daemon = True
 	shell_worker.start()
 
-	shell_worker.join(99999999)
+	while True:
+		time.sleep(0.3)
+
 	
 if __name__ == '__main__':
 	main(sys.argv)
