@@ -115,7 +115,7 @@ def cmd_speed(args):
 		idx = addr - AfroESC.MOTOR_BASE
 		assert idx < 4
 		esc = None
-		for e in esc_dict:
+		for e in esc_dict.values():
 			if e.addr == addr:
 				esc = e
 		assert esc
