@@ -92,7 +92,6 @@ func main() {
 		case startCmd.FullCommand():
 			quad = initQuadcopter()
 			for _, esc := range quad.Esc {
-				esc.Init()
 				go esc.AsyncStart()
 			}
 		case motorStartCmd.FullCommand():
@@ -112,10 +111,11 @@ func main() {
 				fmt.Fprintln(os.Stderr, "Issue start cmd first")
 				continue
 			}
-			if esc := quad.GetEsc(*motorStartCmdId); esc == nil {
+			if esc := quad.GetEsc(*motorSpeedCmdId); esc == nil {
 				fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
 				continue
 			} else {
+				fmt.Sprintf("Setting motor: %v speed to %v\n", *motorSpeedCmdId, *motorSpeedCmdSpeed)
 				esc.SetSpeed(*motorSpeedCmdSpeed)
 			}
 		}

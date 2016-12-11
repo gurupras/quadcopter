@@ -1,6 +1,7 @@
 package quadcopter
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -27,7 +28,11 @@ func NewESC(dev *I2CDevice) *ESC {
 
 func (esc *ESC) Init() {
 	esc.SetAsCurrentDevice()
-	esc.Write([]byte{0})
+	for i := 0; i < 0xFFF; i++ {
+		esc.Write([]byte{0})
+		time.Sleep(10 * time.Microsecond)
+	}
+	esc.Write([]byte{1})
 	esc.CurrentSpeed = 1
 }
 
@@ -35,15 +40,16 @@ func (esc *ESC) AsyncStart() {
 	esc.Init()
 	prev_speed := 0
 	esc.SetAsCurrentDevice()
-
 	for {
 		esc.SpeedLock.Lock()
 		speed := esc.CurrentSpeed
 		if speed != prev_speed {
-			esc.Write([]byte{uint8(speed)})
+			fmt.Println("Attempting to set speed to: %v", speed)
+			prev_speed = speed
 		}
-		time.Sleep(10 * time.Millisecond)
+		esc.Write([]byte{uint8(speed)})
 		esc.SpeedLock.Unlock()
+		time.Sleep(100 * time.Microsecond)
 	}
 }
 
@@ -71,4 +77,5 @@ func (esc *ESC) SetSpeed(speed int) {
 	esc.SpeedLock.Lock()
 	esc.CurrentSpeed = speed
 	esc.SpeedLock.Unlock()
+	fmt.Sprintf("Speed of motor:0x%X set to %v", esc.Addr, esc.CurrentSpeed)
 }
