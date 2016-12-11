@@ -10,8 +10,8 @@ LD =ld
 AR =ar
 
 all : smbus.o
-	$(addprefix $(CROSS), $(CC)) $(CFLAGS) -shared -o $(LIB_NAME).so $^ $(LIBS)
-	$(addprefix $(CROSS), $(AR)) rcs $(LIB_NAME).a $^
+	$(addprefix $(CROSS), $(CC)) $(CFLAGS) -shared -o lib$(LIB_NAME).so $^ $(LIBS)
+	$(addprefix $(CROSS), $(AR)) rcs lib$(LIB_NAME).a $^
 
 %.o : %.c
 	$(addprefix $(CROSS), $(CC)) $(CC_OPTS) -c $< -o $@ $(LIBS)
