@@ -78,6 +78,11 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	cmdParser := command_parser()
 
+	runESC := func(esc *quadcopter.ESC) {
+		fmt.Println("Starting ESC:", esc.Addr)
+		esc.AsyncStart()
+	}
+
 	var quad *quadcopter.Quadcopter
 	for {
 		fmt.Printf("$>")
@@ -91,9 +96,6 @@ func main() {
 		switch kingpin.MustParse(command, err) {
 		case startCmd.FullCommand():
 			quad = initQuadcopter()
-			for _, esc := range quad.Esc {
-				go esc.AsyncStart()
-			}
 		case motorStartCmd.FullCommand():
 			if quad == nil {
 				fmt.Fprintln(os.Stderr, "Issue start cmd first")
@@ -103,7 +105,7 @@ func main() {
 				fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
 				continue
 			} else {
-				esc.Init()
+				go runESC(esc)
 			}
 
 		case motorSpeedCmd.FullCommand():

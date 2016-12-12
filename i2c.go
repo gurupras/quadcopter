@@ -36,9 +36,7 @@ func NewI2CDevice(addr uint8, bus int) *I2CDevice {
 }
 
 func (dev *I2CDevice) SetAsCurrentDevice() error {
-	I2CMutex.Lock()
 	err := ioctl(dev.fd, I2C_SLAVE, dev.Addr)
-	I2CMutex.Unlock()
 	return err
 }
 

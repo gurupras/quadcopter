@@ -2,7 +2,7 @@ package quadcopter
 
 import (
 	"fmt"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -15,9 +15,9 @@ const (
 
 type ESC struct {
 	*I2CDevice
-	CurrentSpeed int
-	SpeedLock    sync.Mutex
+	CurrentSpeed atomic.Value
 	Stop         bool
+	initialized  bool
 }
 
 func NewESC(dev *I2CDevice) *ESC {
@@ -27,43 +27,44 @@ func NewESC(dev *I2CDevice) *ESC {
 }
 
 func (esc *ESC) Init() {
+	if esc.initialized {
+		return
+	}
 	esc.SetAsCurrentDevice()
-	for i := 0; i < 0xFFF; i++ {
+	for i := 0; i < 1; i++ {
 		esc.Write([]byte{0})
-		time.Sleep(10 * time.Microsecond)
 	}
 	esc.Write([]byte{1})
-	esc.CurrentSpeed = 1
+	esc.CurrentSpeed.Store(0)
+	esc.initialized = true
 }
 
 func (esc *ESC) AsyncStart() {
 	esc.Init()
 	prev_speed := 0
-	esc.SetAsCurrentDevice()
+	//esc.SetAsCurrentDevice()
+	fmt.Sprintf("Starting motor: 0x%X\n", esc.Addr)
 	for {
-		esc.SpeedLock.Lock()
-		speed := esc.CurrentSpeed
+		speed := esc.CurrentSpeed.Load().(int)
 		if speed != prev_speed {
 			fmt.Println("Attempting to set speed to: %v", speed)
 			prev_speed = speed
 		}
 		esc.Write([]byte{uint8(speed)})
-		esc.SpeedLock.Unlock()
-		time.Sleep(100 * time.Microsecond)
+		time.Sleep(25 * time.Millisecond)
 	}
 }
 
 func (esc *ESC) SlowStop() {
 	for {
-		esc.SpeedLock.Lock()
-		if esc.CurrentSpeed != 0 {
-			esc.CurrentSpeed -= 5
-			if esc.CurrentSpeed < 0 {
-				esc.CurrentSpeed = 0
+		speed := esc.CurrentSpeed.Load().(int)
+		if speed != 0 {
+			speed -= 5
+			if speed < 0 {
+				speed = 0
 			}
-			esc.SpeedLock.Unlock()
+			esc.CurrentSpeed.Store(speed)
 		} else {
-			esc.SpeedLock.Unlock()
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -74,8 +75,6 @@ func (esc *ESC) SetSpeed(speed int) {
 	if speed > MAX_SPEED {
 		speed = MAX_SPEED
 	}
-	esc.SpeedLock.Lock()
-	esc.CurrentSpeed = speed
-	esc.SpeedLock.Unlock()
-	fmt.Sprintf("Speed of motor:0x%X set to %v", esc.Addr, esc.CurrentSpeed)
+	esc.CurrentSpeed.Store(speed)
+	//fmt.Sprintf("Speed of motor:0x%X set to %v", esc.Addr, esc.CurrentSpeed)
 }
