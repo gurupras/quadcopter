@@ -85,9 +85,9 @@ func (itg *Itg3200) Calibrate(loopCount int, sleepPeriod time.Duration) {
 	}
 	fmt.Println("Finished calibration")
 
-	itg.XOffset = uint16(x_tmp / int64(loopCount))
-	itg.YOffset = uint16(y_tmp / int64(loopCount))
-	itg.ZOffset = uint16(z_tmp / int64(loopCount))
+	itg.XOffset = int16(x_tmp / int64(loopCount))
+	itg.YOffset = int16(y_tmp / int64(loopCount))
+	itg.ZOffset = int16(z_tmp / int64(loopCount))
 }
 
 func (itg *Itg3200) Stop() {
@@ -98,24 +98,24 @@ func (itg *Itg3200) TempAdcToC(value uint16) float64 {
 	return 35.0 + (float64((int(value) + 13200)) / 280.0)
 }
 
-func (itg *Itg3200) XRead() uint16 {
+func (itg *Itg3200) XRead() int16 {
 	return itg.ReadAxis(AXIS_X)
 }
-func (itg *Itg3200) YRead() uint16 {
+func (itg *Itg3200) YRead() int16 {
 	return itg.ReadAxis(AXIS_Y)
 }
 
-func (itg *Itg3200) ZRead() uint16 {
+func (itg *Itg3200) ZRead() int16 {
 	return itg.ReadAxis(AXIS_Z)
 }
 
-func (itg *Itg3200) ReadAxis(axis Axis) uint16 {
+func (itg *Itg3200) ReadAxis(axis Axis) int16 {
 	var (
-		h      uint8  = 0
-		l      uint8  = 0
-		hReg   uint8  = 0
-		lReg   uint8  = 0
-		offset uint16 = 0
+		h      uint8 = 0
+		l      uint8 = 0
+		hReg   uint8 = 0
+		lReg   uint8 = 0
+		offset int16 = 0
 		err    error
 	)
 
@@ -141,15 +141,15 @@ func (itg *Itg3200) ReadAxis(axis Axis) uint16 {
 		return 0
 	}
 
-	val := uint16(uint16(h<<8)|uint16(l)) - offset
+	val := int16(uint16(h<<8)|uint16(l)) - offset
 	return val
 }
 
-func (itg *Itg3200) AdcToAngle(value uint16) float64 {
+func (itg *Itg3200) AdcToAngle(value int16) float64 {
 	return float64(value) / ITG3200_SENSITIVITY
 }
 
-func (itg *Itg3200) ReadSample() (x uint16, y uint16, z uint16) {
+func (itg *Itg3200) ReadSample() (x int16, y int16, z int16) {
 	x = itg.ReadAxis(AXIS_X)
 	y = itg.ReadAxis(AXIS_Y)
 	z = itg.ReadAxis(AXIS_Z)

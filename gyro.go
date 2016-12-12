@@ -1,15 +1,15 @@
 package quadcopter
 
 type Gyroscope struct {
-	XOffset uint16
-	YOffset uint16
-	ZOffset uint16
+	XOffset int16
+	YOffset int16
+	ZOffset int16
 
 	GyroscopeInterface
 }
 
 type GyroscopeInterface interface {
-	XRead() uint16
-	YRead() uint16
-	ZRead() uint16
+	XRead() int16
+	YRead() int16
+	ZRead() int16
 }

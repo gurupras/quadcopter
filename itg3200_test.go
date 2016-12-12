@@ -11,10 +11,10 @@ func TestItg3200(t *testing.T) {
 	itg.Init()
 	itg.Calibrate(1000, 11*time.Millisecond)
 	for {
-		//x, y, z := itg.ReadSampleInDegrees()
-		//fmt.Printf("X:%2.2f  Y:%2.2f  Z:%2.2f\n", x, y, z)
-		x, y, z := itg.ReadSample()
-		fmt.Printf("X:%v  Y:%v  Z:%v\n", x, y, z)
-		time.Sleep(100 * time.Millisecond)
+		x, y, z := itg.ReadSampleInDegrees()
+		fmt.Printf("X:%2.2f  Y:%2.2f  Z:%2.2f\n", x, y, z)
+		//x, y, z := itg.ReadSample()
+		//fmt.Printf("X:%v  Y:%v  Z:%v\n", x, y, z)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
