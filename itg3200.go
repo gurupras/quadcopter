@@ -34,14 +34,6 @@ const (
 	LPFBW_5HZ   uint8 = 0x06
 )
 
-type Axis int
-
-const (
-	AXIS_X Axis = iota
-	AXIS_Y Axis = iota
-	AXIS_Z Axis = iota
-)
-
 type Itg3200 struct {
 	Gyroscope
 	*I2CDevice
@@ -76,7 +68,7 @@ func (itg *Itg3200) Calibrate(loopCount int, sleepPeriod time.Duration) {
 		z_tmp int64 = 0
 	)
 
-	fmt.Println("Calibrating ...")
+	fmt.Println("Calibrating ITG-3200 ...")
 	for i := 0; i < loopCount; i++ {
 		x_tmp += int64(itg.XRead())
 		y_tmp += int64(itg.YRead())
