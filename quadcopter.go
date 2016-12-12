@@ -1,7 +1,8 @@
 package quadcopter
 
 type Quadcopter struct {
-	Esc []*ESC
+	Esc          []*ESC
+	SensorFusion *sf
 }
 
 func NewQuadcopter() *Quadcopter {

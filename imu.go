@@ -20,4 +20,6 @@ type IMUInterface interface {
 	XRead() int16
 	YRead() int16
 	ZRead() int16
+	ReadSample() (int16, int16, int16)
+	ReadSampleInDegrees() (float64, float64, float64)
 }
