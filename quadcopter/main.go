@@ -140,7 +140,7 @@ func main() {
 					esc.SetSpeed(*motorSpeedCmdSpeed)
 				}
 			} else {
-				id, _ := strconv.Atoi(*motorStartCmdId)
+				id, _ := strconv.Atoi(*motorSpeedCmdId)
 				if esc := quad.GetEsc(id); esc == nil {
 					fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
 					continue
