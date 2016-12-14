@@ -43,7 +43,7 @@ func (esc *ESC) AsyncStart() {
 	esc.Init()
 	prev_speed := 0
 	//esc.SetAsCurrentDevice()
-	fmt.Sprintf("Starting motor: 0x%X\n", esc.Addr)
+	fmt.Printf("Starting motor: 0x%X\n", esc.Addr)
 	for {
 		speed := esc.CurrentSpeed.Load().(int)
 		if speed != prev_speed {
@@ -76,5 +76,5 @@ func (esc *ESC) SetSpeed(speed int) {
 		speed = MAX_SPEED
 	}
 	esc.CurrentSpeed.Store(speed)
-	//fmt.Sprintf("Speed of motor:0x%X set to %v", esc.Addr, esc.CurrentSpeed)
+	fmt.Sprintf("Speed of motor:0x%X set to %v", esc.Addr, esc.CurrentSpeed)
 }

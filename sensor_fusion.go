@@ -11,7 +11,7 @@ func NewSensorFusion(itg *Itg3200, adxl345 *Adxl345) *SensorFusion {
 	sf := new(SensorFusion)
 	sf.Itg3200 = itg
 	sf.Adxl345 = adxl345
-	sf.Weight = 0.2
+	sf.Weight = 0.02
 	return sf
 }
 

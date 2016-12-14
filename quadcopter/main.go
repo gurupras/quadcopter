@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/alecthomas/kingpin"
 	"github.com/gurupras/gocommons"
@@ -23,8 +25,8 @@ var (
 	motorStartCmd *kingpin.CmdClause
 	motorSpeedCmd *kingpin.CmdClause
 
-	motorStartCmdId    *int
-	motorSpeedCmdId    *int
+	motorStartCmdId    *string
+	motorSpeedCmdId    *string
 	motorSpeedCmdSpeed *int
 )
 
@@ -42,10 +44,10 @@ func command_parser() *kingpin.Application {
 	motorCmd = app.Command("motor", "Issue command to motor")
 
 	motorStartCmd = motorCmd.Command("start", "Start a motor")
-	motorStartCmdId = motorStartCmd.Arg("id", "ID of motor").Required().Int()
+	motorStartCmdId = motorStartCmd.Arg("id", "ID of motor").Required().String()
 
 	motorSpeedCmd = motorCmd.Command("speed", "Set speed of motor")
-	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().Int()
+	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().String()
 	motorSpeedCmdSpeed = motorSpeedCmd.Arg("speed", "Speed of motor").Required().Int()
 
 	exitCmd = app.Command("exit", "Stop the quadcopter")
@@ -61,6 +63,13 @@ func initQuadcopter() *quadcopter.Quadcopter {
 		esc := quadcopter.NewESC(escI2cDev)
 		quad.Esc = append(quad.Esc, esc)
 	}
+	itgDev := quadcopter.NewI2CDevice(uint8(quadcopter.ITG3200_ADDR), Port)
+	itg := quadcopter.NewItg3200(itgDev)
+
+	adxlDev := quadcopter.NewI2CDevice(uint8(quadcopter.ADXL345_ADDRESS), Port)
+	adxl345 := quadcopter.NewAdxl345(adxlDev)
+
+	quad.SensorFusion = quadcopter.NewSensorFusion(itg, adxl345)
 
 	fmt.Println("Quadcopter initialized")
 	return quad
@@ -101,24 +110,39 @@ func main() {
 				fmt.Fprintln(os.Stderr, "Issue start cmd first")
 				continue
 			}
-			if esc := quad.GetEsc(*motorStartCmdId); esc == nil {
-				fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
-				continue
+			if strings.Compare(*motorStartCmdId, "all") == 0 {
+				for i := 0; i < 4; i++ {
+					esc := quad.GetEsc(i)
+					go runESC(esc)
+				}
 			} else {
-				go runESC(esc)
+				id, _ := strconv.Atoi(*motorStartCmdId)
+				if esc := quad.GetEsc(id); esc == nil {
+					fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
+					continue
+				} else {
+					go runESC(esc)
+				}
 			}
-
 		case motorSpeedCmd.FullCommand():
 			if quad == nil {
 				fmt.Fprintln(os.Stderr, "Issue start cmd first")
 				continue
 			}
-			if esc := quad.GetEsc(*motorSpeedCmdId); esc == nil {
-				fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
-				continue
+			if strings.Compare(*motorSpeedCmdId, "all") == 0 {
+				for i := 0; i < 4; i++ {
+					esc := quad.GetEsc(i)
+					esc.SetSpeed(*motorSpeedCmdSpeed)
+				}
 			} else {
-				fmt.Sprintf("Setting motor: %v speed to %v\n", *motorSpeedCmdId, *motorSpeedCmdSpeed)
-				esc.SetSpeed(*motorSpeedCmdSpeed)
+				id, _ := strconv.Atoi(*motorStartCmdId)
+				if esc := quad.GetEsc(id); esc == nil {
+					fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
+					continue
+				} else {
+					fmt.Sprintf("Setting motor: %v speed to %v\n", id, *motorSpeedCmdSpeed)
+					esc.SetSpeed(*motorSpeedCmdSpeed)
+				}
 			}
 		}
 	}
