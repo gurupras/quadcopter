@@ -24,10 +24,12 @@ var (
 	motorCmd      *kingpin.CmdClause
 	motorStartCmd *kingpin.CmdClause
 	motorSpeedCmd *kingpin.CmdClause
+	motorIncCmd   *kingpin.CmdClause
 
 	motorStartCmdId    *string
 	motorSpeedCmdId    *string
 	motorSpeedCmdSpeed *int
+	motorIncCmdSpeed   *int
 )
 
 func setup_parser() *kingpin.Application {
@@ -49,6 +51,13 @@ func command_parser() *kingpin.Application {
 	motorSpeedCmd = motorCmd.Command("speed", "Set speed of motor")
 	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().String()
 	motorSpeedCmdSpeed = motorSpeedCmd.Arg("speed", "Speed of motor").Required().Int()
+
+	motorSpeedCmd = motorCmd.Command("speed", "Set speed of motor")
+	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().String()
+	motorSpeedCmdSpeed = motorSpeedCmd.Arg("speed", "Speed of motor").Required().Int()
+
+	motorIncCmd = motorCmd.Command("inc", "Increase/Decrease speed of motor")
+	motorIncCmdSpeed = motorIncCmd.Arg("speed", "Speed of motor").Required().Int()
 
 	exitCmd = app.Command("exit", "Stop the quadcopter")
 	stopCmd = app.Command("stop", "Stop the quadcopter")
@@ -143,6 +152,16 @@ func main() {
 					fmt.Sprintf("Setting motor: %v speed to %v\n", id, *motorSpeedCmdSpeed)
 					esc.SetSpeed(*motorSpeedCmdSpeed)
 				}
+			}
+		case motorIncCmd.FullCommand():
+			if quad == nil {
+				fmt.Fprintln(os.Stderr, "Issue start cmd first")
+				continue
+			}
+
+			for i := 0; i < 4; i++ {
+				esc := quad.GetEsc(i)
+				esc.SetSpeed(esc.GetSpeed() + *motorIncCmdSpeed)
 			}
 		}
 	}
