@@ -52,10 +52,6 @@ func command_parser() *kingpin.Application {
 	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().String()
 	motorSpeedCmdSpeed = motorSpeedCmd.Arg("speed", "Speed of motor").Required().Int()
 
-	motorSpeedCmd = motorCmd.Command("speed", "Set speed of motor")
-	motorSpeedCmdId = motorSpeedCmd.Arg("id", "ID of motor").Required().String()
-	motorSpeedCmdSpeed = motorSpeedCmd.Arg("speed", "Speed of motor").Required().Int()
-
 	motorIncCmd = motorCmd.Command("inc", "Increase/Decrease speed of motor")
 	motorIncCmdSpeed = motorIncCmd.Arg("speed", "Speed of motor").Required().Int()
 
