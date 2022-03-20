@@ -48,8 +48,11 @@ func newI2C(addr uint8, bus int) (*i2c.I2C, uintptr, error) {
 	if err := ioctl(f.Fd(), I2C_SLAVE, uintptr(addr)); err != nil {
 		return nil, 0, err
 	}
-	this := &i2c.I2C{f}
-	return this, f.Fd(), nil
+	i2cDev, err := i2c.NewI2C(addr, bus)
+	if err != nil {
+		return nil, 0, err
+	}
+	return i2cDev, f.Fd(), nil
 }
 func ioctl(fd, cmd, arg uintptr) error {
 	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, cmd, arg, 0, 0, 0)

@@ -43,11 +43,11 @@ func (esc *ESC) AsyncStart() {
 	esc.Init()
 	prev_speed := 0
 	//esc.SetAsCurrentDevice()
-	fmt.Sprintf("Starting motor: 0x%X\n", esc.Addr)
+	fmt.Printf("Starting motor: 0x%X\n", esc.Addr)
 	for {
 		speed := esc.CurrentSpeed.Load().(int)
 		if speed != prev_speed {
-			fmt.Println("Attempting to set speed to: %v", speed)
+			fmt.Printf("Attempting to set speed to: %v\n", speed)
 			prev_speed = speed
 		}
 		esc.Write([]byte{uint8(speed)})
