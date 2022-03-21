@@ -1,9 +1,11 @@
-package quadcopter
+package mpu6050
+
+import "github.com/gurupras/quadcopter"
 
 type SensorFusion struct {
 	*Itg3200
 	*Adxl345
-	IMU
+	quadcopter.IMU
 	Weight float64 // Weight applied to accelerometer
 }
 

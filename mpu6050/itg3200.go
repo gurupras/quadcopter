@@ -1,7 +1,11 @@
-package quadcopter
+package mpu6050
 
-import "time"
-import "fmt"
+import (
+	"fmt"
+	"time"
+
+	"github.com/gurupras/quadcopter"
+)
 
 const (
 	ITG3200_ADDR        uint8   = 0x68 // 7-bit address
@@ -35,12 +39,12 @@ const (
 )
 
 type Itg3200 struct {
-	Gyroscope
-	*I2CDevice
+	quadcopter.Gyroscope
+	*quadcopter.I2CDevice
 	initialized bool
 }
 
-func NewItg3200(dev *I2CDevice) *Itg3200 {
+func NewItg3200(dev *quadcopter.I2CDevice) *Itg3200 {
 	itg := new(Itg3200)
 	itg.I2CDevice = dev
 	itg.initialized = false
@@ -91,50 +95,38 @@ func (itg *Itg3200) TempAdcToC(value uint16) float64 {
 }
 
 func (itg *Itg3200) XRead() int16 {
-	return itg.ReadAxis(AXIS_X)
+	return itg.ReadAxis(quadcopter.AXIS_X)
 }
 func (itg *Itg3200) YRead() int16 {
-	return itg.ReadAxis(AXIS_Y)
+	return itg.ReadAxis(quadcopter.AXIS_Y)
 }
 
 func (itg *Itg3200) ZRead() int16 {
-	return itg.ReadAxis(AXIS_Z)
+	return itg.ReadAxis(quadcopter.AXIS_Z)
 }
 
-func (itg *Itg3200) ReadAxis(axis Axis) int16 {
+func (itg *Itg3200) ReadAxis(axis quadcopter.Axis) int16 {
 	var (
-		h      uint8 = 0
-		l      uint8 = 0
 		hReg   uint8 = 0
 		lReg   uint8 = 0
 		offset int16 = 0
-		err    error
 	)
 
 	switch axis {
-	case AXIS_X:
+	case quadcopter.AXIS_X:
 		hReg = REG_GYRO_XOUT_H
 		lReg = REG_GYRO_XOUT_L
 		offset = itg.XOffset
-	case AXIS_Y:
+	case quadcopter.AXIS_Y:
 		hReg = REG_GYRO_YOUT_H
 		lReg = REG_GYRO_YOUT_L
 		offset = itg.YOffset
-	case AXIS_Z:
+	case quadcopter.AXIS_Z:
 		hReg = REG_GYRO_ZOUT_H
 		lReg = REG_GYRO_ZOUT_L
 		offset = itg.ZOffset
 	}
-
-	if h, err = itg.ReadRegU8(hReg); err != nil {
-		return 0
-	}
-	if l, err = itg.ReadRegU8(lReg); err != nil {
-		return 0
-	}
-
-	val := int16(uint16(h<<8)|uint16(l)) - offset
-	return val
+	return quadcopter.ReadAxis(itg.I2C, hReg, lReg, offset)
 }
 
 func (itg *Itg3200) AdcToAngle(value int16) float64 {
@@ -142,9 +134,9 @@ func (itg *Itg3200) AdcToAngle(value int16) float64 {
 }
 
 func (itg *Itg3200) ReadSample() (x int16, y int16, z int16) {
-	x = itg.ReadAxis(AXIS_X)
-	y = itg.ReadAxis(AXIS_Y)
-	z = itg.ReadAxis(AXIS_Z)
+	x = itg.ReadAxis(quadcopter.AXIS_X)
+	y = itg.ReadAxis(quadcopter.AXIS_Y)
+	z = itg.ReadAxis(quadcopter.AXIS_Z)
 	return
 }
 

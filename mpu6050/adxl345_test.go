@@ -1,12 +1,16 @@
-package quadcopter
+package mpu6050
 
-import "testing"
-import "time"
-import "fmt"
+import (
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/gurupras/quadcopter"
+)
 
 func TestAdxl345(t *testing.T) {
 	bus := 1
-	dev := NewI2CDevice(ADXL345_ADDRESS, bus)
+	dev := quadcopter.NewI2CDevice(ADXL345_ADDRESS, bus)
 	adxl345 := NewAdxl345(dev)
 	adxl345.Init()
 	adxl345.Calibrate(1000, 11*time.Millisecond)

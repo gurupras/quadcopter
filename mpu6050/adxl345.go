@@ -1,8 +1,12 @@
-package quadcopter
+package mpu6050
 
-import "time"
-import "math"
-import "fmt"
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/gurupras/quadcopter"
+)
 
 const (
 	ADXL345_ADDRESS uint8 = 0x53 //I2C address of ADXL345
@@ -83,12 +87,12 @@ const (
 )
 
 type Adxl345 struct {
-	*I2CDevice
-	Accelerometer
+	*quadcopter.I2CDevice
+	quadcopter.Accelerometer
 	initialized bool
 }
 
-func NewAdxl345(dev *I2CDevice) *Adxl345 {
+func NewAdxl345(dev *quadcopter.I2CDevice) *Adxl345 {
 	adxl345 := new(Adxl345)
 	adxl345.I2CDevice = dev
 	adxl345.initialized = false
@@ -157,54 +161,42 @@ func (adxl345 *Adxl345) Stop() {
 	adxl345.WriteRegU8(REG_POWER_CTL, 0x0)
 }
 
-func (adxl345 *Adxl345) ReadAxis(axis Axis) int16 {
+func (adxl345 *Adxl345) ReadAxis(axis quadcopter.Axis) int16 {
 	var (
-		h      uint8 = 0
-		l      uint8 = 0
 		hReg   uint8 = 0
 		lReg   uint8 = 0
 		offset int16 = 0
-		err    error
 	)
 
 	switch axis {
-	case AXIS_X:
+	case quadcopter.AXIS_X:
 		hReg = REG_DATA_X_H
 		lReg = REG_DATA_X_L
 		offset = adxl345.XOffset
-	case AXIS_Y:
+	case quadcopter.AXIS_Y:
 		hReg = REG_DATA_Y_H
 		lReg = REG_DATA_Y_L
 		offset = adxl345.YOffset
-	case AXIS_Z:
+	case quadcopter.AXIS_Z:
 		hReg = REG_DATA_Z_H
 		lReg = REG_DATA_Z_L
 		offset = adxl345.ZOffset
 	}
-
-	if h, err = adxl345.ReadRegU8(hReg); err != nil {
-		return 0
-	}
-	if l, err = adxl345.ReadRegU8(lReg); err != nil {
-		return 0
-	}
-
-	val := int16(uint16(h<<8)|uint16(l)) - offset
-	return val
+	return quadcopter.ReadAxis(adxl345.I2C, hReg, lReg, offset)
 }
 
 func (adxl345 *Adxl345) XRead() int16 {
-	return adxl345.ReadAxis(AXIS_X)
+	return adxl345.ReadAxis(quadcopter.AXIS_X)
 }
 func (adxl345 *Adxl345) YRead() int16 {
-	return adxl345.ReadAxis(AXIS_Y)
+	return adxl345.ReadAxis(quadcopter.AXIS_Y)
 }
 func (adxl345 *Adxl345) ZRead() int16 {
-	return adxl345.ReadAxis(AXIS_Z)
+	return adxl345.ReadAxis(quadcopter.AXIS_Z)
 }
 
 func (adxl345 *Adxl345) ReadSample() (int16, int16, int16) {
-	return adxl345.ReadAxis(AXIS_X), adxl345.ReadAxis(AXIS_Y), adxl345.ReadAxis(AXIS_Z)
+	return adxl345.ReadAxis(quadcopter.AXIS_X), adxl345.ReadAxis(quadcopter.AXIS_Y), adxl345.ReadAxis(quadcopter.AXIS_Z)
 }
 
 func (adxl345 *Adxl345) ReadSampleInG() (float64, float64, float64) {

@@ -10,6 +10,7 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/gurupras/gocommons"
 	"github.com/gurupras/quadcopter"
+	"github.com/gurupras/quadcopter/mpu6050"
 )
 
 var (
@@ -68,13 +69,13 @@ func initQuadcopter() *quadcopter.Quadcopter {
 		esc := quadcopter.NewESC(escI2cDev)
 		quad.Esc = append(quad.Esc, esc)
 	}
-	itgDev := quadcopter.NewI2CDevice(uint8(quadcopter.ITG3200_ADDR), Port)
-	itg := quadcopter.NewItg3200(itgDev)
+	itgDev := quadcopter.NewI2CDevice(uint8(mpu6050.ITG3200_ADDR), Port)
+	itg := mpu6050.NewItg3200(itgDev)
 
-	adxlDev := quadcopter.NewI2CDevice(uint8(quadcopter.ADXL345_ADDRESS), Port)
-	adxl345 := quadcopter.NewAdxl345(adxlDev)
+	adxlDev := quadcopter.NewI2CDevice(uint8(mpu6050.ADXL345_ADDRESS), Port)
+	adxl345 := mpu6050.NewAdxl345(adxlDev)
 
-	quad.SensorFusion = quadcopter.NewSensorFusion(itg, adxl345)
+	quad.SensorFusion = mpu6050.NewSensorFusion(itg, adxl345)
 
 	fmt.Println("Quadcopter initialized")
 	return quad
