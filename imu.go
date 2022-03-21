@@ -25,12 +25,16 @@ type IMU struct {
 	IMUInterface
 }
 
+type Sensor interface {
+	ReadSample() (int16, int16, int16)
+	ReadSampleInDegrees() (float64, float64, float64)
+}
+
 type IMUInterface interface {
+	Sensor
 	XRead() int16
 	YRead() int16
 	ZRead() int16
-	ReadSample() (int16, int16, int16)
-	ReadSampleInDegrees() (float64, float64, float64)
 }
 
 func ReadAxis(dev *i2c.I2C, highReg, lowReg uint8, offset int16) int16 {

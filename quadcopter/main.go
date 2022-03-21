@@ -75,7 +75,7 @@ func initQuadcopter() *quadcopter.Quadcopter {
 	adxlDev := quadcopter.NewI2CDevice(uint8(mpu6050.ADXL345_ADDRESS), Port)
 	adxl345 := mpu6050.NewAdxl345(adxlDev)
 
-	quad.SensorFusion = mpu6050.NewSensorFusion(itg, adxl345)
+	quad.Sensor = mpu6050.NewSensorFusion(itg, adxl345)
 
 	fmt.Println("Quadcopter initialized")
 	return quad
