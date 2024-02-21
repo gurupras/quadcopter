@@ -12,6 +12,7 @@ require (
 	github.com/gurupras/go-i2c v0.0.0-20150729191506-003090482050
 	github.com/gurupras/gocommons v0.0.0-20170419040213-46fb221ec046
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7 // indirect
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.2 // indirect

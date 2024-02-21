@@ -10,6 +10,7 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/gurupras/gocommons"
 	"github.com/gurupras/quadcopter"
+	"github.com/gurupras/quadcopter/fusion"
 	"github.com/gurupras/quadcopter/mpu6050"
 )
 
@@ -61,13 +62,17 @@ func command_parser() *kingpin.Application {
 	return app
 }
 
-func initQuadcopter() *quadcopter.Quadcopter {
-	quad := quadcopter.NewQuadcopter()
+type Quadcopter struct {
+	*quadcopter.Quadcopter
+	mpu *mpu6050.MPU6050
+}
 
+func initQuadcopter() *Quadcopter {
+	controllers := make([]*quadcopter.ESC, 0)
 	for i := 0; i < 4; i++ {
 		escI2cDev := quadcopter.NewI2CDevice(uint8(quadcopter.MOTOR_BASE+i), Port)
 		esc := quadcopter.NewESC(escI2cDev)
-		quad.Esc = append(quad.Esc, esc)
+		controllers = append(controllers, esc)
 	}
 	itgDev := quadcopter.NewI2CDevice(uint8(mpu6050.ITG3200_ADDR), Port)
 	itg := mpu6050.NewItg3200(itgDev)
@@ -75,7 +80,12 @@ func initQuadcopter() *quadcopter.Quadcopter {
 	adxlDev := quadcopter.NewI2CDevice(uint8(mpu6050.ADXL345_ADDRESS), Port)
 	adxl345 := mpu6050.NewAdxl345(adxlDev)
 
-	quad.Sensor = mpu6050.NewSensorFusion(itg, adxl345)
+	quad := &Quadcopter{
+		Quadcopter: quadcopter.NewQuadcopter(),
+		mpu:        mpu6050.New(itg, adxl345),
+	}
+	quad.Esc = controllers
+	quad.AHRS = fusion.NewMadgwickAHRS(10)
 
 	fmt.Println("Quadcopter initialized")
 	return quad
@@ -98,7 +108,7 @@ func main() {
 		esc.AsyncStart()
 	}
 
-	var quad *quadcopter.Quadcopter
+	var quad *Quadcopter
 	for {
 		fmt.Printf("$>")
 		cmdSlice, err := reader.ReadString('\n')
@@ -146,7 +156,7 @@ func main() {
 					fmt.Fprintln(os.Stderr, "Invalid motor ID. Use 1, 2, 3, 4")
 					continue
 				} else {
-					fmt.Sprintf("Setting motor: %v speed to %v\n", id, *motorSpeedCmdSpeed)
+					fmt.Printf("Setting motor: %v speed to %v\n", id, *motorSpeedCmdSpeed)
 					esc.SetSpeed(*motorSpeedCmdSpeed)
 				}
 			}

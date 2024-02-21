@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gurupras/quadcopter"
+	"github.com/gurupras/quadcopter/fusion"
 )
 
 func TestSensorFusion(t *testing.T) {
@@ -33,11 +34,13 @@ func TestSensorFusion(t *testing.T) {
 
 	wg.Wait()
 
-	sf := NewSensorFusion(itg, adxl345)
+	m := New(itg, adxl345)
+	sf := fusion.NewMadgwickAHRS(10)
 	for {
-		x, y, z := sf.ReadSampleInDegrees()
-		fmt.Printf("X:%d  Y:%d  Z:%d\n", int(x), int(y), int(z))
-
+		acc, gyro := m.ReadSample()
+		sf.UpdateIMU(acc.X, acc.Y, acc.Z, gyro.X, gyro.Y, gyro.Z)
+		roll, pitch, yaw := sf.GetOrientation()
+		fmt.Printf("roll: %.2f  pitch: %.2f  yaw:%.2f\n", roll, pitch, yaw)
 		time.Sleep(100 * time.Millisecond)
 	}
 }

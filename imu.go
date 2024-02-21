@@ -1,6 +1,8 @@
 package quadcopter
 
-import "github.com/gurupras/go-i2c"
+import (
+	"github.com/gurupras/go-i2c"
+)
 
 type Axis int
 
@@ -10,50 +12,43 @@ const (
 	AXIS_Z Axis = iota
 )
 
+type Roll float64
+type Pitch float64
+type Yaw float64
+
+type AHRS interface {
+	GetOrientation() (Roll, Pitch, Yaw)
+}
+
+type Sensor interface {
+	ReadSample() Vec3
+	ReadSampleInDegrees() (float64, float64, float64)
+}
+
 type IMU struct {
 	XOffset int16
 	YOffset int16
 	ZOffset int16
-
-	REG_DATA_X_H uint8
-	REG_DATA_X_L uint8
-	REG_DATA_Y_H uint8
-	REG_DATA_Y_L uint8
-	REG_DATA_Z_H uint8
-	REG_DATA_Z_L uint8
-
-	IMUInterface
-}
-
-type Sensor interface {
-	ReadSample() (int16, int16, int16)
-	ReadSampleInDegrees() (float64, float64, float64)
-}
-
-type IMUInterface interface {
-	Sensor
-	XRead() int16
-	YRead() int16
-	ZRead() int16
 }
 
 func ReadAxis(dev *i2c.I2C, highReg, lowReg uint8, offset int16) int16 {
 	var (
-		h    uint8 = 0
-		l    uint8 = 0
-		hReg uint8 = 0
-		lReg uint8 = 0
-		err  error
+		h   uint8 = 0
+		l   uint8 = 0
+		err error
 	)
 
-	if h, err = dev.ReadRegU8(hReg); err != nil {
+	if h, err = dev.ReadRegU8(highReg); err != nil {
 		return 0
 	}
-	if l, err = dev.ReadRegU8(lReg); err != nil {
+	if l, err = dev.ReadRegU8(lowReg); err != nil {
 		return 0
 	}
 
-	val := int32(uint16(h<<8)|uint16(l)) - int32(offset)
+	h16 := uint16(h) << 8
+	l16 := uint16(l)
+	v16 := h16 | l16
+	val := int32(v16) - int32(offset)
 	if val > 32768 {
 		val -= 65536
 	}

@@ -195,22 +195,30 @@ func (adxl345 *Adxl345) ZRead() int16 {
 	return adxl345.ReadAxis(quadcopter.AXIS_Z)
 }
 
-func (adxl345 *Adxl345) ReadSample() (int16, int16, int16) {
-	return adxl345.ReadAxis(quadcopter.AXIS_X), adxl345.ReadAxis(quadcopter.AXIS_Y), adxl345.ReadAxis(quadcopter.AXIS_Z)
+func (adxl345 *Adxl345) ReadSample() quadcopter.Vec3 {
+	return quadcopter.Vec3{
+		X: float64(adxl345.ReadAxis(quadcopter.AXIS_X)),
+		Y: float64(adxl345.ReadAxis(quadcopter.AXIS_Y)),
+		Z: float64(adxl345.ReadAxis(quadcopter.AXIS_Z)),
+	}
 }
 
-func (adxl345 *Adxl345) ReadSampleInG() (float64, float64, float64) {
-	x, y, z := adxl345.ReadSample()
-	return adxl345.AdcToG(x), adxl345.AdcToG(y), adxl345.AdcToG(z)
+func (adxl345 *Adxl345) ReadSampleInG() quadcopter.Vec3 {
+	vec := adxl345.ReadSample()
+	return quadcopter.Vec3{
+		X: adxl345.AdcToG(vec.X),
+		Y: adxl345.AdcToG(vec.Y),
+		Z: adxl345.AdcToG(vec.Z),
+	}
 }
 
 func (adxl345 *Adxl345) ReadSampleInDegrees() (float64, float64, float64) {
-	x, y, z := adxl345.ReadSampleInG()
-	return adxl345.GToDegrees(x, y, z)
+	vec := adxl345.ReadSampleInG()
+	return adxl345.GToDegrees(vec.X, vec.Y, vec.Z)
 }
 
-func (adxl345 *Adxl345) AdcToG(value int16) float64 {
-	return float64(value) * (BASE_SCALE * float64(BITS_DATA_RANGE_4G))
+func (adxl345 *Adxl345) AdcToG(value float64) float64 {
+	return value * (BASE_SCALE * float64(BITS_DATA_RANGE_4G))
 }
 
 func (adxl345 *Adxl345) GToDegrees(xG, yG, zG float64) (float64, float64, float64) {

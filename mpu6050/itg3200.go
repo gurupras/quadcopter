@@ -129,22 +129,23 @@ func (itg *Itg3200) ReadAxis(axis quadcopter.Axis) int16 {
 	return quadcopter.ReadAxis(itg.I2C, hReg, lReg, offset)
 }
 
-func (itg *Itg3200) AdcToAngle(value int16) float64 {
-	return float64(value) / ITG3200_SENSITIVITY
+func (itg *Itg3200) AdcToAngle(value float64) float64 {
+	return value / ITG3200_SENSITIVITY
 }
 
-func (itg *Itg3200) ReadSample() (x int16, y int16, z int16) {
-	x = itg.ReadAxis(quadcopter.AXIS_X)
-	y = itg.ReadAxis(quadcopter.AXIS_Y)
-	z = itg.ReadAxis(quadcopter.AXIS_Z)
-	return
+func (itg *Itg3200) ReadSample() quadcopter.Vec3 {
+	return quadcopter.Vec3{
+		X: float64(itg.ReadAxis(quadcopter.AXIS_X)),
+		Y: float64(itg.ReadAxis(quadcopter.AXIS_Y)),
+		Z: float64(itg.ReadAxis(quadcopter.AXIS_Z)),
+	}
 }
 
 func (itg *Itg3200) ReadSampleInDegrees() (xDeg float64, yDeg float64, zDeg float64) {
-	x, y, z := itg.ReadSample()
+	vec := itg.ReadSample()
 
-	xDeg = itg.AdcToAngle(x)
-	yDeg = itg.AdcToAngle(y)
-	zDeg = itg.AdcToAngle(z)
+	xDeg = itg.AdcToAngle(vec.X)
+	yDeg = itg.AdcToAngle(vec.Y)
+	zDeg = itg.AdcToAngle(vec.Z)
 	return
 }
